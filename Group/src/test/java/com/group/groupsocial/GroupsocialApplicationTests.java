@@ -1,10 +1,10 @@
-package com.tdmuserver.discovery;
+package com.group.groupsocial;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DiscoveryApplicationTests {
+class GroupsocialApplicationTests {
 
 	@Test
 	void contextLoads() {
