@@ -1,35 +1,33 @@
-package com.group.groupsocial.command.entity;
-import jakarta.persistence.*;
+package com.group.groupsocial.command.response;
+
+import com.group.groupsocial.command.entity.GroupModel;
+import com.group.groupsocial.command.entity.User;
 import lombok.Getter;
 import lombok.Setter;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.stereotype.Component;
 
-import java.sql.Date;
-
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
-@Entity
-@Table
 @Getter
 @Setter
-public class GroupModel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+@Component
+public class GroupResponse {
     private UUID groupId;
-    @Column(length = 255)
     private String name;
-    @Column(length = 255)
     private String description;
-    private Long userId;
+    private User user;
+    private Long admin;
     private String avatar;
     private Integer quantityMember;
-    private Integer privacy = 0;
-    private Long admin = userId;
     @CreationTimestamp
     private Date createdAt;
     @UpdateTimestamp
     private Date updatedAt;
 
+    public void setUserId(Long userId) {
+    }
 }
-
-//privacy

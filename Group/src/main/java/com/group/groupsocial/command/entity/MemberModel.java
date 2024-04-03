@@ -1,5 +1,5 @@
 package com.group.groupsocial.command.entity;
-
+import com.group.groupsocial.command.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,10 +15,14 @@ import java.util.UUID;
 @Getter
 @Setter
 public class MemberModel {
+    public enum Role {
+        USER, ADMIN
+    }
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID memberId;
-    private String role;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long userId;
+    @Column
+    private Role role;
     private UUID groupId;
     @CreationTimestamp
     private Date createAt;

@@ -17,17 +17,15 @@ import java.util.UUID;
 @Getter
 @Setter
 public class PostModel {
-
     public enum Choice {
         pending,
-        warning,
+        accepted,
     }
-
     @Id
     private UUID postId;
     private UUID groupId;
     private UUID memberId;
-    private Choice status;
+    private Choice status = Choice.pending;
     @UpdateTimestamp
     private Date updatedAt;
 }
