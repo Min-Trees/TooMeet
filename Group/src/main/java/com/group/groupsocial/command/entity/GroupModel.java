@@ -31,5 +31,3 @@ public class GroupModel {
     private Date updatedAt;
 
 }
-
-//privacy

@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.stereotype.Component;
 
 import java.sql.Date;
+import java.util.List;
 import java.util.UUID;
 @Getter
 @Setter
@@ -15,6 +16,8 @@ public class PostResponse {
     private UUID postId;
     private UUID groupId;
     private UUID memberId;
+    private String content;
+    private List<String> images;
     private String status;
     private User user;
     @UpdateTimestamp

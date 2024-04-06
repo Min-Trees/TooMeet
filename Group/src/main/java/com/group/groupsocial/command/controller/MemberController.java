@@ -18,18 +18,18 @@ import java.io.IOException;
 import java.util.UUID;
 
 
+
 // admin out -> bat buoc phai co admin tiep theo
-// orderby member
+// orderby member --- pass
 // 0 user > delete group
-// response data group JPA format
-// created , updated group
+// response data group JPA format --- pass
+// created , updated group --- pass
 
 
+// message queue -> notification service
 // update groupName, change admin ( notification )
 // update group -> (message -> socket -> AMQP)
 // accepted post -> message -> ( socket, postService)
-
-
 
 @RestController
 
@@ -40,6 +40,7 @@ public class MemberController {
     MemberService memberService;
     @Autowired
     RestTemplate restTemplate;
+
     private MemberRepository memberRepository;
     private final String url= "http://user-service:8082/users/info/";
 
@@ -47,7 +48,7 @@ public class MemberController {
         return restTemplate.getForObject(url+userId.toString(), User.class);
     }
 
-    @PostMapping("")
+    @PostMapping("/{groupId}")
     public MemberResponse newMember(@RequestBody MemberRequest memberRequest,
                                     @RequestHeader("user_id") Long userId,
                                     HttpServletRequest request)  throws IOException{
@@ -58,7 +59,6 @@ public class MemberController {
         memberModel.setUserId(userId);
         memberModel.setRole(role);
         MemberModel member = memberService.newMember(memberModel);
-
         MemberResponse members =  new MemberResponse();
         members.setGroupId(member.getGroupId());
         members.setUser(user);

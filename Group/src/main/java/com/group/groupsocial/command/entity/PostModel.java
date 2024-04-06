@@ -22,10 +22,16 @@ public class PostModel {
         accepted,
     }
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID postId;
     private UUID groupId;
     private UUID memberId;
+    private Long userId;
+    private String content;
+    private List<String> images;
     private Choice status = Choice.pending;
     @UpdateTimestamp
     private Date updatedAt;
+    @CreationTimestamp
+    private Date createAt;
 }
