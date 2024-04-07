@@ -60,10 +60,21 @@ public class GroupController {
     }
 
     @GetMapping("{groupId}")
-    public ResponseEntity<GroupResponse> getGroup(@PathVariable UUID groupId){
+    public ResponseEntity<?> getGroup(@PathVariable UUID groupId){
 
         if (groupResponse != null) {
-            return ResponseEntity.ok(groupResponse);
+            GroupModel groupModel = groupService.getGroupById(groupId);
+            User user = fetchDataFromExternalService(groupModel.getAdmin());
+            GroupResponse groups = new GroupResponse();
+            groups.setGroupId(groupModel.getGroupId());
+            groups.setName(groups.getName());
+            groups.setAvatar(groupModel.getAvatar());
+            groups.setAdmin(user);
+            groups.setDescription(groupModel.getDescription());
+            groups.setQuantityMember(groupModel.getQuantityMember());
+            groups.setCreatedAt(groupModel.getCreatedAt());
+            groups.setUpdatedAt(groupModel.getUpdatedAt());
+            return ResponseEntity.ok(groups);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -86,7 +97,7 @@ public class GroupController {
         GroupModel groupModel = new GroupModel();
         groupModel.setName(name);
         groupModel.setAvatar(avatarUrl);
-        groupModel.setUserId(userId);
+        groupModel.setAdmin(userId);
         groupModel.setDescription(description);
         groupModel.setAdmin(userId);
         UUID groupId = groupModel.getGroupId();
@@ -103,7 +114,7 @@ public class GroupController {
         groups.setGroupId(group.getGroupId());
         groups.setName(name);
         groups.setAvatar(avatarUrl);
-        groups.setUser(user);
+        groups.setAdmin(user);
         groups.setDescription(description);
         groups.setQuantityMember(totalMember);
         groups.setCreatedAt(groupModel.getCreatedAt());
@@ -216,7 +227,7 @@ public class GroupController {
         groupResponse.setGroupId(groupId);
         groupResponse.setName(name);
         groupResponse.setAvatar(avatarUrl);
-        groupResponse.setUser(user);
+        groupResponse.setAdmin(user);
         groupResponse.setDescription(description);
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
@@ -234,12 +245,14 @@ public class GroupController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Page<GroupModel> listGroup = groupRepository.findAll(PageRequest.of(page, size));
+
         return listGroup.map((groupModel -> {
+            User user = fetchDataFromExternalService(groupModel.getAdmin());
             GroupResponse groupResponse = new GroupResponse();
             groupResponse.setGroupId(groupModel.getGroupId());
             groupResponse.setName(groupModel.getName());
             groupResponse.setAvatar(groupModel.getAvatar());
-            groupResponse.setAdmin(groupModel.getUserId());
+            groupResponse.setAdmin(user);
             groupResponse.setDescription(groupModel.getDescription());
             groupResponse.setCreatedAt(groupModel.getCreatedAt());
             groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
@@ -261,12 +274,10 @@ public class GroupController {
         groupResponse.setGroupId(groupId);
         groupResponse.setName(groupModel.getName());
         groupResponse.setAvatar(groupModel.getAvatar());
-        groupResponse.setAdmin(admin);
-        groupResponse.setUser(user);
+        groupResponse.setAdmin(user);
         groupResponse.setDescription(groupModel.getDescription());
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
         return ResponseEntity.ok(groupResponse);
-
     }
 }

@@ -1,7 +1,9 @@
 package com.group.groupsocial.command.service;
+import com.group.groupsocial.command.Producer.PostProducer;
 import com.group.groupsocial.command.entity.GroupModel;
 import com.group.groupsocial.command.entity.MemberModel;
 import com.group.groupsocial.command.entity.User;
+import com.group.groupsocial.command.mesage.PostMessage;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
 import com.group.groupsocial.command.response.GroupResponse;
@@ -22,6 +24,8 @@ public class GroupService {
 //    private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
+    @Autowired
+    private final PostProducer postProducer;
     @Autowired
     RestTemplate restTemplate;
 
@@ -97,5 +101,19 @@ public class GroupService {
 
     public void deleteGroup(UUID groupId) {
         groupRepository.deleteById(groupId);
+    }
+
+    public void updatePostStatus(PostMessage postMessage) {
+        // Tạo một đối tượng PostMessage và thiết lập thông tin
+        postMessage = new PostMessage(); 
+        postMessage.setPostId(postMessage.getPostId());
+        postMessage.setGroupId(postMessage.getGroupId());
+        postMessage.setMemberId(postMessage.getMemberId());
+        postMessage.setUserId(postMessage.getUserId());
+        postMessage.setContent(postMessage.getContent());
+        postMessage.setImages(postMessage.getImages());
+        postMessage.setStatus(postMessage.getStatus());
+
+        postProducer.sendUpdatePostStatusMessage(postMessage);
     }
 }

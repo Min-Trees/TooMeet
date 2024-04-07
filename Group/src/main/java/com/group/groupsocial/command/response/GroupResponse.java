@@ -19,8 +19,7 @@ public class GroupResponse {
     private UUID groupId;
     private String name;
     private String description;
-    private User user;
-    private Long admin;
+    private User admin;
     private String avatar;
     private Integer quantityMember;
     @CreationTimestamp

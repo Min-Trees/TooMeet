@@ -20,11 +20,10 @@ public class GroupModel {
     private String name;
     @Column(length = 255)
     private String description;
-    private Long userId;
+    private Long admin;
     private String avatar;
     private Integer quantityMember;
     private Integer privacy = 0;
-    private Long admin = userId;
     @CreationTimestamp
     private Date createdAt;
     @UpdateTimestamp
