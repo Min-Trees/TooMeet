@@ -9,6 +9,7 @@ import com.group.groupsocial.command.repository.MemberRepository;
 import com.group.groupsocial.command.response.GroupResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -39,7 +40,8 @@ public class GroupService {
     public List<MemberModel> getAllMember(){
         return memberRepository.findAll();
     }
-    private final String url= "http://user-service:8082/users/info/";
+    @Value("${user.info.url}")
+    private String url;
     public User fetchDataFromExternalService(Long userId) {
         if (userId == null) {
             userId = 1L; // Gán userId mặc định là 1 (hoặc bất kỳ giá trị mặc định nào bạn muốn)
@@ -51,13 +53,13 @@ public class GroupService {
         List<GroupModel> groupModels = groupRepository.findAll();
         List<GroupResponse> groupResponses = new ArrayList<>();
         for(GroupModel x : groupModels){
-            User user = fetchDataFromExternalService(x.getUserId());
+            User user = fetchDataFromExternalService(x.getAdmin());
             GroupResponse groupTemp = new GroupResponse();
             groupTemp.setGroupId(x.getGroupId());
             groupTemp.setName(x.getName());
             groupTemp.setDescription(x.getDescription());
             groupTemp.setAvatar(x.getAvatar());
-            groupTemp.setUser(user);
+            groupTemp.setAdmin(user);
             groupResponses.add(groupTemp);
         }
         return groupResponses;
@@ -72,17 +74,18 @@ public class GroupService {
         if (group != null) {
             // Tạo một đối tượng GroupResponse từ dữ liệu nhóm và trả về
             GroupResponse response = new GroupResponse();
+            User user = fetchDataFromExternalService(group.getAdmin());
             response.setGroupId(group.getGroupId());
             response.setName(group.getName());
             response.setDescription(group.getDescription());
-            response.setUserId(group.getUserId());
+            response.setAdmin(user);
             response.setAvatar(group.getAvatar());
             response.setQuantityMember(group.getQuantityMember());
             response.setCreatedAt(group.getCreatedAt());
             response.setUpdatedAt(group.getUpdatedAt());
-            User user = userRepository.findById(group.getUserId()).orElse(null);
+            user = userRepository.findById(group.getAdmin()).orElse(null);
             if (user != null) {
-                response.setUser(user);
+                response.setAdmin(user);
             }
 
             return response;
@@ -108,12 +111,10 @@ public class GroupService {
         postMessage = new PostMessage(); 
         postMessage.setPostId(postMessage.getPostId());
         postMessage.setGroupId(postMessage.getGroupId());
-        postMessage.setMemberId(postMessage.getMemberId());
         postMessage.setUserId(postMessage.getUserId());
         postMessage.setContent(postMessage.getContent());
         postMessage.setImages(postMessage.getImages());
         postMessage.setStatus(postMessage.getStatus());
-
         postProducer.sendUpdatePostStatusMessage(postMessage);
     }
 }

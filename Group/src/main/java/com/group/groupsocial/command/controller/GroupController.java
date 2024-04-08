@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import com.group.groupsocial.command.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -51,7 +52,8 @@ public class GroupController {
     @Getter
     @Autowired
     private final PostService postService;
-    private final String url= "http://user-service:8082/users/info/";
+    @Value("${user.info.url}")
+    private String url;
     public User fetchDataFromExternalService(Long userId) {
         if (userId == null) {
             userId = 1L; // Gán userId mặc định là 1 (hoặc bất kỳ giá trị mặc định nào bạn muốn)
@@ -81,7 +83,7 @@ public class GroupController {
     }
     @PostMapping("")
     public GroupResponse newGroup(
-            @RequestHeader("user_id") Long userId,
+            @RequestHeader(value = "x-user-id") Long userId,
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("avatar") MultipartFile avatar,
@@ -125,7 +127,7 @@ public class GroupController {
 //    post to group
     @PostMapping("/{groupId}/post")
     public PostResponse newPost(
-            @RequestHeader("user_id") Long userId,
+            @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable("groupId") UUID groupId,
             @RequestParam("memberId") UUID memberId,
             @RequestParam("content") String content,
@@ -149,7 +151,6 @@ public class GroupController {
         postModel.setCreateAt(postModel.getCreateAt());
         postModel.setUpdatedAt(postModel.getUpdatedAt());
         PostModel post = postService.newpost(postModel);
-
         PostResponse postResponse = new PostResponse();
         postResponse.setGroupId(groupId);
         postResponse.setPostId(postModel.getPostId());
@@ -199,7 +200,7 @@ public class GroupController {
     }
     @PutMapping("/{groupId}")
     public ResponseEntity<?> updateGroup(
-            @RequestHeader("user_id") Long userId,
+            @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable UUID groupId,
             @RequestParam("name") String name,
             @RequestParam("description") String description,
@@ -262,7 +263,7 @@ public class GroupController {
 
     @PutMapping("/updateadmin/{groupId}")
     public ResponseEntity<?> updateAdmin(
-            @RequestHeader("user_id") Long userId,
+            @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable UUID groupId,
             @RequestParam("admin") Long admin,
             HttpServletRequest request) throws IOException{

@@ -19,7 +19,6 @@ public class MemberModel {
         USER, ADMIN
     }
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long userId;
     @Column
     private Role role;

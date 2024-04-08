@@ -14,7 +14,6 @@ import java.util.UUID;
 public class PostMessage {
     private UUID postId;
     private UUID groupId;
-    private UUID memberId;
     private Long userId;
     private String content;
     private List<String> images;
