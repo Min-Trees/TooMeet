@@ -59,7 +59,7 @@ public class GroupController {
         return restTemplate.getForObject(url+userId.toString(), User.class);
     }
 
-    @GetMapping("{groupId}")
+    @GetMapping("/{groupId}")
     public ResponseEntity<?> getGroup(@PathVariable UUID groupId){
 
         if (groupResponse != null) {

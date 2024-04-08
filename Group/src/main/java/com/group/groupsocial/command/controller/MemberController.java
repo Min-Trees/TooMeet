@@ -32,7 +32,6 @@ import java.util.UUID;
 // accepted post -> message -> ( socket, postService)
 
 @RestController
-
 @RequiredArgsConstructor
 @RequestMapping("/group/member")
 public class MemberController {
