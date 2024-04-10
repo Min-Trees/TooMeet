@@ -6,6 +6,7 @@ import com.group.groupsocial.command.entity.User;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
 import com.group.groupsocial.command.request.MemberRequest;
+import com.group.groupsocial.command.response.GroupResponse;
 import com.group.groupsocial.command.response.MemberResponse;
 import com.group.groupsocial.command.service.GroupService;
 import com.group.groupsocial.command.service.MemberService;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -39,57 +43,85 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/group/member")
 public class MemberController {
+    private final MemberService memberService;
+    private final RestTemplate restTemplate;
+    private final MemberRepository memberRepository;
+    private final GroupService groupService;
+    private final String url;
+    private final GroupRepository groupRepository;
+
     @Autowired
-    MemberService memberService;
-    @Autowired
-    RestTemplate restTemplate;
-    private MemberRepository memberRepository;
-    @Value("${user.info.url}")
-    private  String url;
-    private GroupService groupService;
+    public MemberController(MemberService memberService, MemberRepository memberRepository, RestTemplate restTemplate, GroupService groupService, @Value("${user.info.url}") String url, GroupRepository groupRepository) {
+        this.memberService = memberService;
+        this.memberRepository = memberRepository;
+        this.restTemplate = restTemplate;
+        this.groupService = groupService;
+        this.url = url;
+        this.groupRepository = groupRepository;
+    }
+
     public User fetchDataFromExternalService(Long userId) {
-        return restTemplate.getForObject(url+userId.toString(), User.class);
+        return restTemplate.getForObject(url + userId, User.class);
     }
 
     @PostMapping("/{groupId}")
     public MemberResponse newMember(@RequestBody MemberRequest memberRequest,
                                     @RequestHeader(value = "x-user-id") Long userId,
-                                    HttpServletRequest request)  throws IOException{
-        MemberModel memberModel = new MemberModel();
-        MemberModel.Role role = MemberModel.Role.USER;
-        User user = fetchDataFromExternalService(userId);
-        memberModel.setGroupId(memberRequest.getGroupId());
-        memberModel.setUserId(userId);
-        memberModel.setRole(role);
-        MemberModel member = memberService.newMember(memberModel);
-        MemberResponse members =  new MemberResponse();
-        members.setGroupId(member.getGroupId());
-        members.setUser(user);
-        members.setRole(String.valueOf(role));
-        return members;
-    }
+                                    @PathVariable("groupId") UUID newGroupId,
+                                    HttpServletRequest request) throws IOException {
+        // Lấy thông tin nhóm từ cơ sở dữ liệu
+        GroupModel groupModel = groupService.getGroupById(newGroupId);
+        User user = fetchDataFromExternalService(groupModel.getAdmin());
 
-    @Autowired
-    public MemberController(MemberService memberService, MemberRepository memberRepository) {
-        this.memberRepository = memberRepository;
+        // Tạo mới một đối tượng MemberModel từ thông tin yêu cầu của người dùng
+        MemberModel memberModel = new MemberModel();
+        memberModel.setUserId(userId);
+        memberModel.setRole(MemberModel.Role.USER);
+        memberModel.setGroup(groupModel); // Sử dụng Collections.singletonList để tạo danh sách chứa một UUID duy nhất
+
+        // Lưu thông tin thành viên mới vào cơ sở dữ liệu
+//        MemberModel newMember = memberService.newMember(memberModel);
+
+        // Cập nhật thông tin nhóm: tăng số lượng thành viên
+        Integer quantityMember = groupModel.getQuantityMember();
+        if (quantityMember != null) {
+            groupModel.setQuantityMember(quantityMember + 1);
+        } else {
+            groupModel.setQuantityMember(1);
+        }
+        groupRepository.save(groupModel);
+        // Trả về thông tin về thành viên mới
+        MemberResponse memberResponse = new MemberResponse();
+        memberResponse.setGroup(GroupResponse.convert(groupModel,user));// Sử dụng Collections.singletonList để tạo danh sách chứa một UUID duy nhất
+        memberResponse.setUser(fetchDataFromExternalService(userId));
+        memberResponse.setRole(memberModel.getRole().toString());
+
+        return memberResponse;
     }
 
     @GetMapping("/{groupId}")
     public Page<MemberResponse> getMember(
-            @PathVariable UUID groupId ,
+            @PathVariable UUID groupId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size){
+            @RequestParam(defaultValue = "10") int limit) {
 
-        Page<MemberModel> memberList =  memberRepository.findByGroupId(groupId, PageRequest.of(page, size));
+        Page<MemberModel> memberList = memberRepository.findByGroupGroupId(groupId, PageRequest.of(page, limit));
         return memberList.map((memberModel -> {
             GroupModel groupModel = groupService.getGroupById(groupId);
-            User user = fetchDataFromExternalService(groupModel.getAdmin());
-            MemberResponse memberResponse = new MemberResponse();
-            memberResponse.setGroupId(memberModel.getGroupId());
-            memberResponse.setRole(memberModel.getRole().name());
-            memberResponse.setUser(user);
-            return memberResponse;
+            if (groupModel != null) {
+                User user = fetchDataFromExternalService(groupModel.getAdmin());
+                MemberResponse memberResponse = new MemberResponse();
+                memberResponse.setGroup(GroupResponse.convert(groupModel,user));
+                GroupResponse groupResponse = new GroupResponse();
+                memberResponse.setRole(memberModel.getRole().name());
+                memberResponse.setUser(user);
+                return memberResponse;
+            } else {
+                // Xử lý nếu không tìm thấy thông tin nhóm
+                return null;
+            }
         }));
     }
 }
+
 //admin -> duyet , xoa

@@ -29,4 +29,17 @@ public class GroupResponse {
 
     public void setUserId(Long userId) {
     }
+    public static GroupResponse convert(GroupModel groupModel, User admin){
+        GroupResponse groupResponse = new GroupResponse();
+        groupResponse.setGroupId(groupModel.getGroupId());
+        groupResponse.setName(groupModel.getName());
+        groupResponse.setAvatar(groupModel.getAvatar());
+        groupResponse.setAdmin(admin);
+        groupResponse.setDescription(groupModel.getDescription());
+        groupResponse.setQuantityMember(groupModel.getQuantityMember());
+        groupResponse.setCreatedAt(groupModel.getCreatedAt());
+        groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
+        return groupResponse;
+    }
+
 }

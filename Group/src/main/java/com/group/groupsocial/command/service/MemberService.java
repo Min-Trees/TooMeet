@@ -1,45 +1,49 @@
 package com.group.groupsocial.command.service;
 
+import com.group.groupsocial.command.entity.GroupModel;
 import com.group.groupsocial.command.entity.MemberModel;
+import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Member;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MemberService {
     private final MemberRepository memberRepository;
-    public MemberService(MemberRepository memberRepository) {
+    private final GroupRepository groupRepository;
+
+    public MemberService(MemberRepository memberRepository, GroupRepository groupRepository) {
         this.memberRepository = memberRepository;
+        this.groupRepository = groupRepository;
     }
 
-    public Page<MemberModel> getAllMemberByGroupId(UUID groupId , Pageable pageable){
-        return memberRepository.findByGroupId(groupId, pageable);
-    }
+    // Các phương thức khác của MemberService
 
-    public MemberModel newMember(MemberModel member){
-        return memberRepository.save(member);
-    }
-    public MemberModel MemberByGroupId(MemberModel member){
-        return memberRepository.save(member);
-    }
+    // Định nghĩa phương thức getAllGroupsByMember để trả về danh sách tất cả các nhóm mà một thành viên đã tham gia
+    public List<GroupModel> getAllGroupsByUserId(Long userId) {
+        // Lấy danh sách các MemberModel dựa trên userId
+        List<MemberModel> members = memberRepository.findByUserId(userId);
 
-    public MemberModel joinGroup(UUID memberId, UUID groupId){
-        Optional<MemberModel> existingMember = memberRepository.findById(memberId);
-        if (existingMember.isPresent()) {
-            MemberModel member = existingMember.get();
-            member.setGroupId(groupId);
-            return memberRepository.save(member);
-        } else {
-            throw new RuntimeException("Member not found with ID: " + memberId);
-        }
-    }
+        // Tạo danh sách groupId từ danh sách các MemberModel
+//        List<UUID> groupIds = new ArrayList<>();
+//        for (MemberModel member : members) {
+//            groupIds.add(member.getGroup());
+//        }
+
+
+        // Truy vấn danh sách các nhóm từ groupRepository
+//        return groupRepository.findByGroupIdIn(members);
+        return members.stream().map(MemberModel::getGroup).toList();
     }
 
 
+    public MemberModel newMember(MemberModel memberModel) {
+        return memberRepository.save(memberModel);
+    }
+}

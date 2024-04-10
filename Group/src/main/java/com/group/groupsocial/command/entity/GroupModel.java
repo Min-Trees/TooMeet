@@ -1,12 +1,15 @@
 package com.group.groupsocial.command.entity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Date;
+import java.util.Date;
 
+import java.util.List;
 import java.util.UUID;
 @Entity
 @Table
@@ -14,7 +17,7 @@ import java.util.UUID;
 @Setter
 public class GroupModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID groupId;
     @Column(length = 255)
     private String name;
@@ -22,11 +25,15 @@ public class GroupModel {
     private String description;
     private Long admin;
     private String avatar;
-    private Integer quantityMember;
+    private Integer quantityMember = 0;
     private Integer privacy = 0;
     @CreationTimestamp
     private Date createdAt;
     @UpdateTimestamp
     private Date updatedAt;
-
+    @OneToMany(cascade = CascadeType.ALL)
+    List<MemberModel> memberList;
+    public GroupModel() {
+        this.groupId = UUID.randomUUID(); // Tạo một UUID ngẫu nhiên khi tạo mới một GroupModel
+    }
 }

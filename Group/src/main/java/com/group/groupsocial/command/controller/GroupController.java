@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group")
@@ -96,33 +98,40 @@ public class GroupController {
         // Sử dụng userId lấy từ header
         User user = fetchDataFromExternalService(userId);
 
+        // Tạo mới một nhóm và lấy groupId
         GroupModel groupModel = new GroupModel();
+        // Không cần gán groupId ở đây
         groupModel.setName(name);
         groupModel.setAvatar(avatarUrl);
         groupModel.setAdmin(userId);
         groupModel.setDescription(description);
         groupModel.setAdmin(userId);
-        UUID groupId = groupModel.getGroupId();
-        int totalMember = groupService.getMemberQuantity(groupId) + 1;
-        GroupModel group = groupService.newGroup(groupModel);
+        groupModel.setQuantityMember(1);
+        groupModel.setCreatedAt(groupModel.getCreatedAt());
+        groupModel.setUpdatedAt(groupModel.getUpdatedAt());
+        groupModel.setMemberList(new ArrayList<>());
 
         MemberModel memberModel = new MemberModel();
         memberModel.setUserId(userId);
         memberModel.setRole(MemberModel.Role.ADMIN);
-        memberModel.setGroupId(groupModel.getGroupId());
-        MemberModel member = memberService.newMember(memberModel);
+        memberModel.setGroup(groupModel);
+        groupModel.getMemberList().add(memberModel);
+
+        GroupModel group = groupService.newGroup(groupModel);
+        UUID groupId = group.getGroupId();
 
         GroupResponse groups = new GroupResponse();
-        groups.setGroupId(group.getGroupId());
+        groups.setGroupId(groupId); // Sử dụng groupId của nhóm mới
         groups.setName(name);
         groups.setAvatar(avatarUrl);
         groups.setAdmin(user);
         groups.setDescription(description);
-        groups.setQuantityMember(totalMember);
-        groups.setCreatedAt(groupModel.getCreatedAt());
-        groups.setUpdatedAt(groupModel.getUpdatedAt());
+        groups.setQuantityMember(group.getQuantityMember());
+        groups.setCreatedAt(group.getCreatedAt());
+        groups.setUpdatedAt(group.getUpdatedAt());
         return groups;
     }
+
 
 //    post to group
     @PostMapping("/{groupId}/post")
@@ -230,6 +239,7 @@ public class GroupController {
         groupResponse.setAvatar(avatarUrl);
         groupResponse.setAdmin(user);
         groupResponse.setDescription(description);
+        groupResponse.setQuantityMember(groupModel.getQuantityMember());
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
 
@@ -244,8 +254,8 @@ public class GroupController {
     @GetMapping
     public Page<GroupResponse> getAllGroups(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<GroupModel> listGroup = groupRepository.findAll(PageRequest.of(page, size));
+            @RequestParam(defaultValue = "10") int limit) {
+        Page<GroupModel> listGroup = groupRepository.findAll(PageRequest.of(page, limit));
 
         return listGroup.map((groupModel -> {
             User user = fetchDataFromExternalService(groupModel.getAdmin());
@@ -255,6 +265,7 @@ public class GroupController {
             groupResponse.setAvatar(groupModel.getAvatar());
             groupResponse.setAdmin(user);
             groupResponse.setDescription(groupModel.getDescription());
+            groupResponse.setQuantityMember(groupModel.getQuantityMember());
             groupResponse.setCreatedAt(groupModel.getCreatedAt());
             groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
             return groupResponse;
@@ -277,8 +288,54 @@ public class GroupController {
         groupResponse.setAvatar(groupModel.getAvatar());
         groupResponse.setAdmin(user);
         groupResponse.setDescription(groupModel.getDescription());
+        groupResponse.setQuantityMember(groupModel.getQuantityMember());
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
         return ResponseEntity.ok(groupResponse);
     }
+
+    @GetMapping("/{groupId}/{userId}")
+    public ResponseEntity<?> MemberCheck(
+            @PathVariable("groupId") UUID groupId,
+            @RequestHeader(value = "x-user-id") Long userId,
+            HttpServletRequest request) throws IOException{
+        GroupModel groupModel = groupService.getGroupById(groupId);
+        User user = fetchDataFromExternalService(userId);
+        String message;
+
+        if(groupModel!= null){
+            return ResponseEntity.ok(GroupResponse.convert(groupModel,user));
+        }
+        else{
+            message = "member is not exist group";
+        }
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(message);
+    }
+    // all group of user
+    @PostMapping("/{userId}/groups")
+    public ResponseEntity<List<GroupResponse>> getGroupsOfMember(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+
+        // Lấy danh sách tất cả các nhóm mà thành viên đã tham gia
+        List<GroupModel> userGroups = memberService.getAllGroupsByUserId(userId);
+
+        // Ánh xạ sang GroupResponse và trả về
+        List<GroupResponse> groupResponses = userGroups.stream()
+                .map(groupModel -> {
+                    GroupResponse groupResponse = new GroupResponse();
+                    groupResponse.setGroupId(groupModel.getGroupId());
+                    groupResponse.setAvatar(groupModel.getAvatar());
+                    groupResponse.setName(groupModel.getName());
+                    return groupResponse;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(groupResponses);
+    }
+
 }
+

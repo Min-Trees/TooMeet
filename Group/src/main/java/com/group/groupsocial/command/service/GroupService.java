@@ -19,24 +19,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
-public class GroupService {
 
-//    private final UserRepository userRepository;
+public class GroupService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     @Autowired
     private final PostProducer postProducer;
-    @Autowired
     RestTemplate restTemplate;
 
+
+
+    @Autowired
+    public GroupService(GroupRepository groupRepository, MemberRepository memberRepository, PostProducer postProducer, RestTemplate restTemplate) {
+        this.groupRepository = groupRepository;
+        this.memberRepository = memberRepository;
+        this.postProducer = postProducer;
+        this.restTemplate = restTemplate; // Inject RestTemplate
+    }
     public GroupModel newGroup(GroupModel group){
         return groupRepository.save(group);
     }
     public int getMemberQuantity(UUID groupId) {
         return memberRepository.countMember(groupId);
     }
-
     public List<MemberModel> getAllMember(){
         return memberRepository.findAll();
     }
@@ -44,11 +49,10 @@ public class GroupService {
     private String url;
     public User fetchDataFromExternalService(Long userId) {
         if (userId == null) {
-            userId = 1L; // Gán userId mặc định là 1 (hoặc bất kỳ giá trị mặc định nào bạn muốn)
+            userId = 1L;
         }
         return restTemplate.getForObject(url+userId.toString(), User.class);
     }
-
     public List<GroupResponse> getAllGroups() {
         List<GroupModel> groupModels = groupRepository.findAll();
         List<GroupResponse> groupResponses = new ArrayList<>();
@@ -64,15 +68,10 @@ public class GroupService {
         }
         return groupResponses;
     }
-
     public GroupResponse getDetailGroup(UUID groupId) {
-        // Sử dụng GroupRepository để truy xuất thông tin về nhóm từ cơ sở dữ liệu
-        // Đây chỉ là một ví dụ, bạn cần thay đổi phần này tùy theo thiết kế của ứng dụng và cơ sở dữ liệu của bạn
-
         GroupModel group = groupRepository.findById(groupId).orElse(null);
         SimpleJpaRepository<User, Long> userRepository = null;
         if (group != null) {
-            // Tạo một đối tượng GroupResponse từ dữ liệu nhóm và trả về
             GroupResponse response = new GroupResponse();
             User user = fetchDataFromExternalService(group.getAdmin());
             response.setGroupId(group.getGroupId());
@@ -87,28 +86,21 @@ public class GroupService {
             if (user != null) {
                 response.setAdmin(user);
             }
-
             return response;
         } else {
             return null;
         }
     }
-
-
     public void updateGroup(GroupModel groupModel) {
     }
-
     public GroupModel getGroupById(UUID groupId) {
         return groupRepository.findById(groupId).orElse(null);
     }
-
     public void deleteGroup(UUID groupId) {
         groupRepository.deleteById(groupId);
     }
-
     public void updatePostStatus(PostMessage postMessage) {
-        // Tạo một đối tượng PostMessage và thiết lập thông tin
-        postMessage = new PostMessage(); 
+        postMessage = new PostMessage();
         postMessage.setPostId(postMessage.getPostId());
         postMessage.setGroupId(postMessage.getGroupId());
         postMessage.setUserId(postMessage.getUserId());
@@ -117,4 +109,6 @@ public class GroupService {
         postMessage.setStatus(postMessage.getStatus());
         postProducer.sendUpdatePostStatusMessage(postMessage);
     }
+
+
 }
