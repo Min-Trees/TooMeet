@@ -69,20 +69,14 @@ public class MemberController {
                                     @RequestHeader(value = "x-user-id") Long userId,
                                     @PathVariable("groupId") UUID newGroupId,
                                     HttpServletRequest request) throws IOException {
-        // Lấy thông tin nhóm từ cơ sở dữ liệu
         GroupModel groupModel = groupService.getGroupById(newGroupId);
         User user = fetchDataFromExternalService(groupModel.getAdmin());
 
-        // Tạo mới một đối tượng MemberModel từ thông tin yêu cầu của người dùng
         MemberModel memberModel = new MemberModel();
         memberModel.setUserId(userId);
         memberModel.setRole(MemberModel.Role.USER);
-        memberModel.setGroup(groupModel); // Sử dụng Collections.singletonList để tạo danh sách chứa một UUID duy nhất
+        memberModel.setGroup(groupModel);
 
-        // Lưu thông tin thành viên mới vào cơ sở dữ liệu
-//        MemberModel newMember = memberService.newMember(memberModel);
-
-        // Cập nhật thông tin nhóm: tăng số lượng thành viên
         Integer quantityMember = groupModel.getQuantityMember();
         if (quantityMember != null) {
             groupModel.setQuantityMember(quantityMember + 1);
@@ -90,9 +84,8 @@ public class MemberController {
             groupModel.setQuantityMember(1);
         }
         groupRepository.save(groupModel);
-        // Trả về thông tin về thành viên mới
         MemberResponse memberResponse = new MemberResponse();
-        memberResponse.setGroup(GroupResponse.convert(groupModel,user));// Sử dụng Collections.singletonList để tạo danh sách chứa một UUID duy nhất
+        memberResponse.setGroup(GroupResponse.convert(groupModel,user));
         memberResponse.setUser(fetchDataFromExternalService(userId));
         memberResponse.setRole(memberModel.getRole().toString());
 
@@ -117,7 +110,6 @@ public class MemberController {
                 memberResponse.setUser(user);
                 return memberResponse;
             } else {
-                // Xử lý nếu không tìm thấy thông tin nhóm
                 return null;
             }
         }));
