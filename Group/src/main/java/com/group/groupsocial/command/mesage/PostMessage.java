@@ -17,9 +17,5 @@ public class PostMessage {
     private Long userId;
     private String content;
     private List<String> images;
-    private String status = String.valueOf(PostModel.Choice.accepted);
-    @UpdateTimestamp
-    private Date updatedAt;
-    @CreationTimestamp
-    private Date createAt;
+    private PostModel.Choice status = PostModel.Choice.pending;
 }

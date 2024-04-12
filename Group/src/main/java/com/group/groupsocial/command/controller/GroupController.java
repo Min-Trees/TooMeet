@@ -4,13 +4,12 @@ import com.cloudinary.utils.ObjectUtils;
 import com.group.groupsocial.command.entity.GroupModel;
 import com.group.groupsocial.command.entity.MemberModel;
 import com.group.groupsocial.command.entity.PostModel;
+import com.group.groupsocial.command.mesage.PostMessage;
+import com.group.groupsocial.command.mesage.PostMessageAccepted;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.response.GroupResponse;
 import com.group.groupsocial.command.response.PostResponse;
-import com.group.groupsocial.command.service.GroupService;
-import com.group.groupsocial.command.service.ImageUpload;
-import com.group.groupsocial.command.service.MemberService;
-import com.group.groupsocial.command.service.PostService;
+import com.group.groupsocial.command.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +46,8 @@ public class GroupController {
     @Autowired
     private GroupRepository groupRepository;
     private final ImageUpload imageUpload;
+    @Autowired
+    private AMQPService amqpService;
 
     //    config
     @Autowired
@@ -160,6 +161,16 @@ public class GroupController {
         postModel.setCreateAt(postModel.getCreateAt());
         postModel.setUpdatedAt(postModel.getUpdatedAt());
         PostModel post = postService.newpost(postModel);
+
+        PostMessage postMessage = new PostMessage();
+        postMessage.setPostId(postModel.getPostId());
+        postMessage.setContent(postModel.getContent());
+        postMessage.setImages(postModel.getImages());
+        postMessage.setStatus(postModel.getStatus());
+        postMessage.setUserId(userId);
+        postMessage.setGroupId(postModel.getGroupId());
+        amqpService.sendMessage(postMessage);
+
         PostResponse postResponse = new PostResponse();
         postResponse.setGroupId(groupId);
         postResponse.setPostId(postModel.getPostId());
@@ -189,9 +200,14 @@ public class GroupController {
             postModel.setUpdatedAt(postModel.getUpdatedAt());
             postService.updatePost(postModel);
             User user = fetchDataFromExternalService(postModel.getUserId());
+            PostMessageAccepted postMessage = new PostMessageAccepted();
+            postMessage.setPostID(postId);
+            postMessage.setStatus(PostModel.Choice.valueOf(status));
+            amqpService.sendMessageAccepted(postMessage);
+            
             PostResponse postResponse = new PostResponse();
             postResponse.setGroupId(postModel.getGroupId());
-            postResponse.setPostId(postModel.getPostId());
+            postResponse.setPostId(postId);
             postResponse.setContent(postModel.getContent());
             postResponse.setImages(postModel.getImages());
             postResponse.setStatus(String.valueOf(postModel.getStatus()));
@@ -293,7 +309,7 @@ public class GroupController {
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
         return ResponseEntity.ok(groupResponse);
     }
-
+// need update ***************
     @GetMapping("/{groupId}/{userId}")
     public ResponseEntity<?> MemberCheck(
             @PathVariable("groupId") UUID groupId,
@@ -336,6 +352,7 @@ public class GroupController {
 
         return ResponseEntity.ok().body(groupResponses);
     }
+
 
 }
 

@@ -101,7 +101,6 @@ public class GroupService {
     }
     public void updatePostStatus(PostMessage postMessage) {
         postMessage = new PostMessage();
-        postMessage.setPostId(postMessage.getPostId());
         postMessage.setGroupId(postMessage.getGroupId());
         postMessage.setUserId(postMessage.getUserId());
         postMessage.setContent(postMessage.getContent());
