@@ -69,7 +69,7 @@ public class GroupController {
             User user = fetchDataFromExternalService(groupModel.getAdmin());
             GroupResponse groups = new GroupResponse();
             groups.setGroupId(groupModel.getGroupId());
-            groups.setName(groups.getName());
+            groups.setName(groupModel.getName());
             groups.setAvatar(groupModel.getAvatar());
             groups.setAdmin(user);
             groups.setDescription(groupModel.getDescription());
