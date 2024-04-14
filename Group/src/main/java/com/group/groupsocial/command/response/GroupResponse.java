@@ -41,5 +41,4 @@ public class GroupResponse {
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
         return groupResponse;
     }
-
 }

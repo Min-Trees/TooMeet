@@ -25,10 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -139,14 +136,13 @@ public class GroupController {
     public PostResponse newPost(
             @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable("groupId") UUID groupId,
-            @RequestParam("memberId") UUID memberId,
             @RequestParam("content") String content,
             @RequestParam("images") List<MultipartFile> images,
             HttpServletRequest request) throws IOException{
         User user = fetchDataFromExternalService(userId);
         PostModel postModel = new PostModel();
         postModel.setGroupId(groupId);
-        postModel.setMemberId(memberId);
+        postModel.setMemberId(userId);
         postModel.setContent(content);
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile image:images){
@@ -163,10 +159,8 @@ public class GroupController {
         PostModel post = postService.newpost(postModel);
 
         PostMessage postMessage = new PostMessage();
-        postMessage.setPostId(postModel.getPostId());
         postMessage.setContent(postModel.getContent());
         postMessage.setImages(postModel.getImages());
-        postMessage.setStatus(postModel.getStatus());
         postMessage.setUserId(userId);
         postMessage.setGroupId(postModel.getGroupId());
         amqpService.sendMessage(postMessage);
@@ -174,7 +168,7 @@ public class GroupController {
         PostResponse postResponse = new PostResponse();
         postResponse.setGroupId(groupId);
         postResponse.setPostId(postModel.getPostId());
-        postResponse.setMemberId(memberId);
+        postResponse.setMemberId(userId);
         postResponse.setUser(user);
         postResponse.setStatus(String.valueOf(postModel.getStatus()));
         postResponse.setImages(imageUrls);
@@ -182,40 +176,26 @@ public class GroupController {
         return postResponse;
     }
 
-
 // update status post.status = pending to post.status = accepted
-    @PutMapping("/{groupId}/{postId}")
-    public ResponseEntity<?> updatePost(
-            @PathVariable("groupId") UUID groupId,
+    @PostMapping("/{postId}")
+    public ResponseEntity<?> updateStatusPost(
+            @RequestHeader("x-user-id") Long userId,
             @PathVariable("postId") UUID postId,
-            @RequestParam("status") String status,
+            @RequestParam("groupId") UUID groupId,
             HttpServletRequest request) throws IOException {
-
-            PostModel postModel = postService.getPostById(postId);
-            if (postModel == null) {
-                String message = "Không tìm thấy nhóm với ID: " + groupId;
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+            GroupModel groupModel = groupService.getGroupById(groupId);
+            Long admin = groupModel.getAdmin();
+            if(Objects.equals(admin, userId)) {
+                PostMessageAccepted postMessage = new PostMessageAccepted();
+                postMessage.setGroupId(groupId);
+                postMessage.setPostId(postId);
+                amqpService.sendMessageAccepted(postMessage);
+                PostResponse postResponse = new PostResponse();
+                postResponse.setPostId(postId);
+                return ResponseEntity.ok(postResponse);
             }
-            postModel.setStatus(PostModel.Choice.valueOf(status));
-            postModel.setUpdatedAt(postModel.getUpdatedAt());
-            postService.updatePost(postModel);
-            User user = fetchDataFromExternalService(postModel.getUserId());
-            PostMessageAccepted postMessage = new PostMessageAccepted();
-            postMessage.setPostID(postId);
-            postMessage.setStatus(PostModel.Choice.valueOf(status));
-            amqpService.sendMessageAccepted(postMessage);
-            
-            PostResponse postResponse = new PostResponse();
-            postResponse.setGroupId(postModel.getGroupId());
-            postResponse.setPostId(postId);
-            postResponse.setContent(postModel.getContent());
-            postResponse.setImages(postModel.getImages());
-            postResponse.setStatus(String.valueOf(postModel.getStatus()));
-            postResponse.setUser(user);
-            postResponse.setUpdatedAt(postModel.getUpdatedAt());
-            postResponse.setMemberId(postModel.getMemberId());
-            return ResponseEntity.ok(postResponse);
-
+            String message = "user not admin";
+        return ResponseEntity.badRequest().body(message);                                                                                      
     }
     private File convertMultipartFileToFile(String file) throws IOException {
         return null;
@@ -223,44 +203,44 @@ public class GroupController {
     private UUID getUserId() {
         return null;
     }
-    @PutMapping("/{groupId}")
-    public ResponseEntity<?> updateGroup(
-            @RequestHeader(value = "x-user-id") Long userId,
-            @PathVariable UUID groupId,
-            @RequestParam("name") String name,
-            @RequestParam("description") String description,
-            @RequestParam("avatar") MultipartFile avatar,
-            HttpServletRequest request) throws IOException {
-
-        String filename = UUID.randomUUID().toString() + "_" + avatar.getOriginalFilename();
-        Map uploadResult = cloudinary.uploader().upload(avatar.getBytes(), ObjectUtils.asMap("public_id", "groups/" + filename));
-        String avatarUrl = (String) uploadResult.get("url");
-
-        // Sử dụng userId lấy từ header
-        User user = fetchDataFromExternalService(userId);
-
-        GroupModel groupModel = groupService.getGroupById(groupId);
-        if (groupModel == null) {
-            String message = "Không tìm thấy nhóm với ID: " + groupId;
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-        }
-        groupModel.setName(name);
-        groupModel.setAvatar(avatarUrl);
-        groupModel.setDescription(description);
-        groupService.updateGroup(groupModel);
-
-        GroupResponse groupResponse = new GroupResponse();
-        groupResponse.setGroupId(groupId);
-        groupResponse.setName(name);
-        groupResponse.setAvatar(avatarUrl);
-        groupResponse.setAdmin(user);
-        groupResponse.setDescription(description);
-        groupResponse.setQuantityMember(groupModel.getQuantityMember());
-        groupResponse.setCreatedAt(groupModel.getCreatedAt());
-        groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
-
-        return ResponseEntity.ok(groupResponse);
-    }
+//    @PutMapping("/{groupId}")
+//    public ResponseEntity<?> updateGroup(
+//            @RequestHeader(value = "x-user-id") Long userId,
+//            @PathVariable UUID groupId,
+//            @RequestParam("name") String name,
+//            @RequestParam("description") String description,
+//            @RequestParam("avatar") MultipartFile avatar,
+//            HttpServletRequest request) throws IOException {
+//
+//        String filename = UUID.randomUUID().toString() + "_" + avatar.getOriginalFilename();
+//        Map uploadResult = cloudinary.uploader().upload(avatar.getBytes(), ObjectUtils.asMap("public_id", "groups/" + filename));
+//        String avatarUrl = (String) uploadResult.get("url");
+//
+//        // Sử dụng userId lấy từ header
+//        User user = fetchDataFromExternalService(userId);
+//
+//        GroupModel groupModel = groupService.getGroupById(groupId);
+//        if (groupModel == null) {
+//            String message = "Không tìm thấy nhóm với ID: " + groupId;
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+//        }
+//        groupModel.setName(name);
+//        groupModel.setAvatar(avatarUrl);
+//        groupModel.setDescription(description);
+//        groupService.updateGroup(groupModel);
+//
+//        GroupResponse groupResponse = new GroupResponse();
+//        groupResponse.setGroupId(groupId);
+//        groupResponse.setName(name);
+//        groupResponse.setAvatar(avatarUrl);
+//        groupResponse.setAdmin(user);
+//        groupResponse.setDescription(description);
+//        groupResponse.setQuantityMember(groupModel.getQuantityMember());
+//        groupResponse.setCreatedAt(groupModel.getCreatedAt());
+//        groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
+//
+//        return ResponseEntity.ok(groupResponse);
+//    }
 
     @DeleteMapping("/groups/{groupId}")
     public ResponseEntity<?> deleteGroup(@PathVariable UUID groupId) {
@@ -288,27 +268,6 @@ public class GroupController {
         }));
     }
 
-    @PutMapping("/updateadmin/{groupId}")
-    public ResponseEntity<?> updateAdmin(
-            @RequestHeader(value = "x-user-id") Long userId,
-            @PathVariable UUID groupId,
-            @RequestParam("admin") Long admin,
-            HttpServletRequest request) throws IOException{
-        User user = fetchDataFromExternalService(userId);
-        GroupModel groupModel = groupService.getGroupById(groupId);
-        groupModel.setAdmin(admin);
-        groupService.updateGroup(groupModel);
-        GroupResponse groupResponse = new GroupResponse();
-        groupResponse.setGroupId(groupId);
-        groupResponse.setName(groupModel.getName());
-        groupResponse.setAvatar(groupModel.getAvatar());
-        groupResponse.setAdmin(user);
-        groupResponse.setDescription(groupModel.getDescription());
-        groupResponse.setQuantityMember(groupModel.getQuantityMember());
-        groupResponse.setCreatedAt(groupModel.getCreatedAt());
-        groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
-        return ResponseEntity.ok(groupResponse);
-    }
 // need update ***************
     @GetMapping("/{groupId}/{userId}")
     public ResponseEntity<?> MemberCheck(
@@ -329,17 +288,14 @@ public class GroupController {
                 .status(HttpStatus.NOT_FOUND)
                 .body(message);
     }
-    // all group of user
     @PostMapping("/{userId}/groups")
     public ResponseEntity<List<GroupResponse>> getGroupsOfMember(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit) {
 
-        // Lấy danh sách tất cả các nhóm mà thành viên đã tham gia
         List<GroupModel> userGroups = memberService.getAllGroupsByUserId(userId);
 
-        // Ánh xạ sang GroupResponse và trả về
         List<GroupResponse> groupResponses = userGroups.stream()
                 .map(groupModel -> {
                     GroupResponse groupResponse = new GroupResponse();

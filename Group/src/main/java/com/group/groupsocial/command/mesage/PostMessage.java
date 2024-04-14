@@ -12,10 +12,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public class PostMessage {
-    private UUID postId;
     private UUID groupId;
     private Long userId;
     private String content;
     private List<String> images;
-    private PostModel.Choice status = PostModel.Choice.pending;
 }

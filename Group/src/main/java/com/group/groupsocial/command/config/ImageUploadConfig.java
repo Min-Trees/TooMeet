@@ -19,5 +19,4 @@ public class ImageUploadConfig {
         config.put("api_secret",API_SECRET);
         return new Cloudinary(config);
     }
-
 }

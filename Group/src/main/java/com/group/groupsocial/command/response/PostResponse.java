@@ -15,7 +15,7 @@ import java.util.UUID;
 public class PostResponse {
     private UUID postId;
     private UUID groupId;
-    private UUID memberId;
+    private Long memberId;
     private String content;
     private List<String> images;
     private String status;

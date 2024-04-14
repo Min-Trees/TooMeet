@@ -9,6 +9,6 @@ import java.util.UUID;
 @Getter
 @Setter
 public class PostMessageAccepted {
-    private UUID postID;
-    private PostModel.Choice status = PostModel.Choice.accepted;
+    private UUID postId;
+    private UUID groupId;
 }

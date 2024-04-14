@@ -105,7 +105,6 @@ public class GroupService {
         postMessage.setUserId(postMessage.getUserId());
         postMessage.setContent(postMessage.getContent());
         postMessage.setImages(postMessage.getImages());
-        postMessage.setStatus(postMessage.getStatus());
         postProducer.sendUpdatePostStatusMessage(postMessage);
     }
 

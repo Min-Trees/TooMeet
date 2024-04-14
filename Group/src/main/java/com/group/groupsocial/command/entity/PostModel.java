@@ -6,8 +6,6 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.swing.*;
-import java.awt.*;
 import java.sql.Date;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +23,7 @@ public class PostModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID postId;
     private UUID groupId;
-    private UUID memberId;
+    private Long memberId;
     private Long userId;
     private String content;
     private List<String> images;

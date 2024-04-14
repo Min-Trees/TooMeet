@@ -11,10 +11,15 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
 @Configuration
 public class AMQPConfig {
-    @Value("${spring.rabbitmq.queue.group_new_post_queue}")
+    @Value("${spring.rabbitmq.queue.post_new_post_queue}")
     String postNewPostQueue;
-    @Value("${spring.rabbitmq.routing.group_new_post_routing}")
+    @Value("${spring.rabbitmq.routing.post_new_post_routing}")
     String postNewPostRouting;
+    @Value("${spring.rabbitmq.queue.post_update_post_queue}")
+    String postUpdatePostQueue;
+    @Value("${spring.rabbitmq.routing.post_new_update_routing}")
+    String postUpdatePostRouting;
+
     @Value("${spring.rabbitmq.exchange.post_exchange}")
     String postExchange;
 
@@ -27,8 +32,17 @@ public class AMQPConfig {
         return new Queue(postNewPostQueue);
     }
     @Bean
+    public Queue postUpdateQueue(){
+        return new Queue(postUpdatePostQueue);
+    }
+    @Bean
     public Binding postNewPostBinDing(){
         return BindingBuilder.bind(postNewPostQueue()).to(postExchange()).with(postNewPostRouting);
+    }
+
+    @Bean
+    public Binding postUpdatePostBinDing(){
+        return BindingBuilder.bind(postUpdateQueue()).to(postExchange()).with(postUpdatePostRouting);
     }
     @Bean
     public AmqpTemplate amqpTemplate(final ConnectionFactory factory) {

@@ -10,10 +10,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AMQPService {
-    @Value("${spring.rabbitmq.queue.group_new_post_queue}")
+    @Value("${spring.rabbitmq.queue.post_new_post_queue}")
     String postNewPostQueue;
-    @Value("${spring.rabbitmq.routing.group_new_post_routing}")
+    @Value("${spring.rabbitmq.routing.post_new_post_routing}")
     String postNewPostRouting;
+    @Value("${spring.rabbitmq.queue.post_update_post_queue}")
+    String postUpdatePostQueue;
+    @Value("${spring.rabbitmq.routing.post_new_update_routing}")
+    String postUpdatePostRouting;
     @Value("${spring.rabbitmq.exchange.post_exchange}")
     String postExchange;
 
@@ -29,6 +33,6 @@ public class AMQPService {
     }
 
     public void sendMessageAccepted(PostMessageAccepted postMessage){
-        amqpTemplate.convertAndSend(postExchange,postNewPostRouting,postMessage);
+        amqpTemplate.convertAndSend(postExchange,postUpdatePostRouting,postMessage);
     }
 }
