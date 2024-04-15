@@ -8,6 +8,7 @@ import com.group.groupsocial.command.mesage.PostMessage;
 import com.group.groupsocial.command.mesage.PostMessageAccepted;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.response.GroupResponse;
+import com.group.groupsocial.command.response.GroupResponseOfUser;
 import com.group.groupsocial.command.response.PostResponse;
 import com.group.groupsocial.command.service.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,15 +56,16 @@ public class GroupController {
     private final PostService postService;
     @Value("${user.info.url}")
     private String url;
+
     public User fetchDataFromExternalService(Long userId) {
         if (userId == null) {
             userId = 1L; // Gán userId mặc định là 1 (hoặc bất kỳ giá trị mặc định nào bạn muốn)
         }
-        return restTemplate.getForObject(url+userId.toString(), User.class);
+        return restTemplate.getForObject(url + userId.toString(), User.class);
     }
 
     @GetMapping("/{groupId}")
-    public ResponseEntity<?> getGroup(@PathVariable UUID groupId){
+    public ResponseEntity<?> getGroup(@PathVariable UUID groupId) {
 
         if (groupResponse != null) {
             GroupModel groupModel = groupService.getGroupById(groupId);
@@ -81,6 +84,7 @@ public class GroupController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
+
     @PostMapping("")
     public GroupResponse newGroup(
             @RequestHeader(value = "x-user-id") Long userId,
@@ -131,23 +135,23 @@ public class GroupController {
     }
 
 
-//    post to group
+    //    post to group
     @PostMapping("/{groupId}/post")
     public PostResponse newPost(
             @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable("groupId") UUID groupId,
             @RequestParam("content") String content,
             @RequestParam("images") List<MultipartFile> images,
-            HttpServletRequest request) throws IOException{
+            HttpServletRequest request) throws IOException {
         User user = fetchDataFromExternalService(userId);
         PostModel postModel = new PostModel();
         postModel.setGroupId(groupId);
         postModel.setMemberId(userId);
         postModel.setContent(content);
         List<String> imageUrls = new ArrayList<>();
-        for (MultipartFile image:images){
+        for (MultipartFile image : images) {
             try {
-                String imageUrl= imageUpload.uploadImage(image);
+                String imageUrl = imageUpload.uploadImage(image);
                 imageUrls.add(imageUrl);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -176,30 +180,32 @@ public class GroupController {
         return postResponse;
     }
 
-// update status post.status = pending to post.status = accepted
+    // update status post.status = pending to post.status = accepted
     @PostMapping("/{postId}")
     public ResponseEntity<?> updateStatusPost(
             @RequestHeader("x-user-id") Long userId,
             @PathVariable("postId") UUID postId,
             @RequestParam("groupId") UUID groupId,
             HttpServletRequest request) throws IOException {
-            GroupModel groupModel = groupService.getGroupById(groupId);
-            Long admin = groupModel.getAdmin();
-            if(Objects.equals(admin, userId)) {
-                PostMessageAccepted postMessage = new PostMessageAccepted();
-                postMessage.setGroupId(groupId);
-                postMessage.setPostId(postId);
-                amqpService.sendMessageAccepted(postMessage);
-                PostResponse postResponse = new PostResponse();
-                postResponse.setPostId(postId);
-                return ResponseEntity.ok(postResponse);
-            }
-            String message = "user not admin";
-        return ResponseEntity.badRequest().body(message);                                                                                      
+        GroupModel groupModel = groupService.getGroupById(groupId);
+        Long admin = groupModel.getAdmin();
+        if (Objects.equals(admin, userId)) {
+            PostMessageAccepted postMessage = new PostMessageAccepted();
+            postMessage.setGroupId(groupId);
+            postMessage.setPostId(postId);
+            amqpService.sendMessageAccepted(postMessage);
+            PostResponse postResponse = new PostResponse();
+            postResponse.setPostId(postId);
+            return ResponseEntity.ok(postResponse);
+        }
+        String message = "user not admin";
+        return ResponseEntity.badRequest().body(message);
     }
+
     private File convertMultipartFileToFile(String file) throws IOException {
         return null;
     }
+
     private UUID getUserId() {
         return null;
     }
@@ -247,6 +253,7 @@ public class GroupController {
         groupService.deleteGroup(groupId);
         return ResponseEntity.ok("Nhóm đã được xóa thành công");
     }
+
     @GetMapping
     public Page<GroupResponse> getAllGroups(
             @RequestParam(defaultValue = "0") int page,
@@ -268,47 +275,31 @@ public class GroupController {
         }));
     }
 
-// need update ***************
+    // need update ***************
     @GetMapping("/{groupId}/{userId}")
     public ResponseEntity<?> MemberCheck(
             @PathVariable("groupId") UUID groupId,
             @RequestHeader(value = "x-user-id") Long userId,
-            HttpServletRequest request) throws IOException{
+            HttpServletRequest request) throws IOException {
         GroupModel groupModel = groupService.getGroupById(groupId);
         User user = fetchDataFromExternalService(userId);
         String message;
 
-        if(groupModel!= null){
-            return ResponseEntity.ok(GroupResponse.convert(groupModel,user));
-        }
-        else{
+        if (groupModel != null) {
+            return ResponseEntity.ok(GroupResponse.convert(groupModel, user));
+        } else {
             message = "member is not exist group";
         }
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(message);
     }
-    @PostMapping("/{userId}/groups")
-    public ResponseEntity<List<GroupResponse>> getGroupsOfMember(
-            @PathVariable Long userId,
+
+    @GetMapping("/{userId}/groups")
+    public Page<GroupResponseOfUser> getGroupByUserId(
+            @RequestHeader("x-user-id") Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit) {
-
-        List<GroupModel> userGroups = memberService.getAllGroupsByUserId(userId);
-
-        List<GroupResponse> groupResponses = userGroups.stream()
-                .map(groupModel -> {
-                    GroupResponse groupResponse = new GroupResponse();
-                    groupResponse.setGroupId(groupModel.getGroupId());
-                    groupResponse.setAvatar(groupModel.getAvatar());
-                    groupResponse.setName(groupModel.getName());
-                    return groupResponse;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok().body(groupResponses);
+        return groupService.getGroupByUserId(page, limit, userId);
     }
-
-
 }
-

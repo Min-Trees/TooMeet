@@ -1,6 +1,8 @@
 package com.group.groupsocial.command.repository;
 import com.group.groupsocial.command.entity.GroupModel;
 import com.group.groupsocial.command.response.GroupResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,5 +14,7 @@ public interface GroupRepository extends JpaRepository<GroupModel,UUID> {
 
     void deleteById(UUID groupId);
 
-    List<GroupModel> findByGroupIdIn(List<UUID> groupIds);
+    List<GroupModel> findByGroupIdIn(List<UUID> groupIds , Pageable pageable);
+
+
 }

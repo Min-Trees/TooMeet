@@ -7,9 +7,14 @@ import com.group.groupsocial.command.mesage.PostMessage;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
 import com.group.groupsocial.command.response.GroupResponse;
+import com.group.groupsocial.command.response.GroupResponseOfUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -108,5 +113,9 @@ public class GroupService {
         postProducer.sendUpdatePostStatusMessage(postMessage);
     }
 
-
+    public Page<GroupResponseOfUser> getGroupByUserId(int page, int limit, Long userId) {
+        Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        Page<MemberModel> memberModels = memberRepository.findByUserId(userId, pageable);
+        return memberModels.map(memberModel -> GroupResponseOfUser.convert(memberModel.getGroup(), userId));
+    }
 }

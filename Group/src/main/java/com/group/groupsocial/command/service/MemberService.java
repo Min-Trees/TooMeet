@@ -4,6 +4,7 @@ import com.group.groupsocial.command.entity.GroupModel;
 import com.group.groupsocial.command.entity.MemberModel;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
+import com.group.groupsocial.command.response.GroupResponseOfUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -26,24 +27,16 @@ public class MemberService {
     // Các phương thức khác của MemberService
 
     // Định nghĩa phương thức getAllGroupsByMember để trả về danh sách tất cả các nhóm mà một thành viên đã tham gia
-    public List<GroupModel> getAllGroupsByUserId(Long userId) {
-        // Lấy danh sách các MemberModel dựa trên userId
-        List<MemberModel> members = memberRepository.findByUserId(userId);
 
-        // Tạo danh sách groupId từ danh sách các MemberModel
-//        List<UUID> groupIds = new ArrayList<>();
-//        for (MemberModel member : members) {
-//            groupIds.add(member.getGroup());
-//        }
+    public Page<GroupModel> getAllGroupsByUserId(Long userId, Pageable pageable) {
+        Page<MemberModel> membersPage = memberRepository.findByUserId(userId, pageable);
 
-
-        // Truy vấn danh sách các nhóm từ groupRepository
-//        return groupRepository.findByGroupIdIn(members);
-        return members.stream().map(MemberModel::getGroup).toList();
+        return membersPage.map(MemberModel::getGroup);
     }
-
 
     public MemberModel newMember(MemberModel memberModel) {
         return memberRepository.save(memberModel);
     }
+
+
 }
