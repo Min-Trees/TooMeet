@@ -28,9 +28,8 @@ public class MemberModel {
     @ManyToOne
     private GroupModel group;
     @CreationTimestamp
-    private Date createAt;
-
-    // userId 2 role user
-    // userId 2 role Admin
-
+    private Date createdAt;
+    public boolean isMemberOfGroup(GroupModel groupToCheck) {
+        return this.group != null && this.group.equals(groupToCheck);
+    }
 }

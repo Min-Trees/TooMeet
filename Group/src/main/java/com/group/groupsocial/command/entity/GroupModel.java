@@ -36,4 +36,5 @@ public class GroupModel {
     public GroupModel() {
         this.groupId = UUID.randomUUID(); // Tạo một UUID ngẫu nhiên khi tạo mới một GroupModel
     }
+
 }

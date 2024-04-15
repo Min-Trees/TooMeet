@@ -1,15 +1,18 @@
 package com.group.groupsocial.command.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table
 @Getter
@@ -26,7 +29,8 @@ public class PostModel {
     private Long memberId;
     private Long userId;
     private String content;
-    private List<String> images;
+    @Builder.Default
+    private List<String> images = new ArrayList<>();
     private Choice status = Choice.pending;
     @UpdateTimestamp
     private Date updatedAt;

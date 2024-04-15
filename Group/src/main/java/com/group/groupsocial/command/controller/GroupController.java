@@ -7,8 +7,10 @@ import com.group.groupsocial.command.entity.PostModel;
 import com.group.groupsocial.command.mesage.PostMessage;
 import com.group.groupsocial.command.mesage.PostMessageAccepted;
 import com.group.groupsocial.command.repository.GroupRepository;
+import com.group.groupsocial.command.repository.MemberRepository;
 import com.group.groupsocial.command.response.GroupResponse;
 import com.group.groupsocial.command.response.GroupResponseOfUser;
+import com.group.groupsocial.command.response.MemberInGroup;
 import com.group.groupsocial.command.response.PostResponse;
 import com.group.groupsocial.command.service.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +49,8 @@ public class GroupController {
     private final ImageUpload imageUpload;
     @Autowired
     private AMQPService amqpService;
-
+    @Autowired
+    MemberRepository memberRepository;
     //    config
     @Autowired
     RestTemplate restTemplate;
@@ -64,26 +67,6 @@ public class GroupController {
         return restTemplate.getForObject(url + userId.toString(), User.class);
     }
 
-    @GetMapping("/{groupId}")
-    public ResponseEntity<?> getGroup(@PathVariable UUID groupId) {
-
-        if (groupResponse != null) {
-            GroupModel groupModel = groupService.getGroupById(groupId);
-            User user = fetchDataFromExternalService(groupModel.getAdmin());
-            GroupResponse groups = new GroupResponse();
-            groups.setGroupId(groupModel.getGroupId());
-            groups.setName(groupModel.getName());
-            groups.setAvatar(groupModel.getAvatar());
-            groups.setAdmin(user);
-            groups.setDescription(groupModel.getDescription());
-            groups.setQuantityMember(groupModel.getQuantityMember());
-            groups.setCreatedAt(groupModel.getCreatedAt());
-            groups.setUpdatedAt(groupModel.getUpdatedAt());
-            return ResponseEntity.ok(groups);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-    }
 
     @PostMapping("")
     public GroupResponse newGroup(
@@ -276,20 +259,20 @@ public class GroupController {
     }
 
     // need update ***************
-    @GetMapping("/{groupId}/{userId}")
-    public ResponseEntity<?> MemberCheck(
+    @GetMapping("/{groupId}/")
+    public ResponseEntity<?> getGroup(
             @PathVariable("groupId") UUID groupId,
             @RequestHeader(value = "x-user-id") Long userId,
             HttpServletRequest request) throws IOException {
+        MemberModel member = memberRepository.findById(userId).orElse(null);
         GroupModel groupModel = groupService.getGroupById(groupId);
         User user = fetchDataFromExternalService(userId);
         String message;
 
-        if (groupModel != null) {
-            return ResponseEntity.ok(GroupResponse.convert(groupModel, user));
-        } else {
-            message = "member is not exist group";
+        if (groupModel != null && member != null) {
+            return ResponseEntity.ok(MemberInGroup.convert(groupModel, user, member));
         }
+        message = "group not found";
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(message);
@@ -302,4 +285,13 @@ public class GroupController {
             @RequestParam(defaultValue = "10") int limit) {
         return groupService.getGroupByUserId(page, limit, userId);
     }
+
+    @GetMapping("/checkadmin")
+    public boolean isAdmin(
+            @RequestParam("userId") Long userId,
+            @RequestParam("groupId") UUID groupId){
+        GroupModel group = groupService.getGroupById(groupId);
+        return Objects.equals(group.getAdmin(), userId);
+    }
+
 }
