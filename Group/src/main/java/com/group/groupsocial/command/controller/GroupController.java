@@ -290,7 +290,7 @@ public class GroupController {
         IsAdmin isAdmin = new IsAdmin();
 
         if(Objects.equals(group.getAdmin(), userId)){
-            isAdmin.setAdmin(true);
+            isAdmin.setIsAdmin(1);
         }
         return isAdmin;
     }

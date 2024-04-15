@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 public class IsAdmin {
-    private boolean isAdmin = false;
+    private Integer isAdmin = 0;
 }
