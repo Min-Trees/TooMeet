@@ -259,7 +259,7 @@ public class GroupController {
     }
 
     // need update ***************
-    @GetMapping("/{groupId}/")
+    @GetMapping("/{groupId}")
     public ResponseEntity<?> getGroup(
             @PathVariable("groupId") UUID groupId,
             @RequestHeader(value = "x-user-id") Long userId,
