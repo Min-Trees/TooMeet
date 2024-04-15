@@ -1,22 +1,16 @@
 package com.group.groupsocial.command.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.group.groupsocial.command.entity.GroupModel;
-import com.group.groupsocial.command.entity.MemberModel;
-import com.group.groupsocial.command.entity.PostModel;
+import com.group.groupsocial.command.entity.*;
 import com.group.groupsocial.command.mesage.PostMessage;
 import com.group.groupsocial.command.mesage.PostMessageAccepted;
 import com.group.groupsocial.command.repository.GroupRepository;
 import com.group.groupsocial.command.repository.MemberRepository;
-import com.group.groupsocial.command.response.GroupResponse;
-import com.group.groupsocial.command.response.GroupResponseOfUser;
-import com.group.groupsocial.command.response.MemberInGroup;
-import com.group.groupsocial.command.response.PostResponse;
+import com.group.groupsocial.command.response.*;
 import com.group.groupsocial.command.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import com.group.groupsocial.command.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -124,7 +118,7 @@ public class GroupController {
             @RequestHeader(value = "x-user-id") Long userId,
             @PathVariable("groupId") UUID groupId,
             @RequestParam("content") String content,
-            @RequestParam("images") List<MultipartFile> images,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
             HttpServletRequest request) throws IOException {
         User user = fetchDataFromExternalService(userId);
         PostModel postModel = new PostModel();
@@ -264,13 +258,15 @@ public class GroupController {
             @PathVariable("groupId") UUID groupId,
             @RequestHeader(value = "x-user-id") Long userId,
             HttpServletRequest request) throws IOException {
-        MemberModel member = memberRepository.findById(userId).orElse(null);
+        MemberId memberId = new MemberId();
+        memberId.setUserId(userId);
+        memberId = memberRepository.findById(memberId).withUserIdOrDefault(null);
         GroupModel groupModel = groupService.getGroupById(groupId);
         User user = fetchDataFromExternalService(userId);
         String message;
 
-        if (groupModel != null && member != null) {
-            return ResponseEntity.ok(MemberInGroup.convert(groupModel, user, member));
+        if (groupModel != null && memberId != null) {
+            return ResponseEntity.ok(MemberInGroup.convert(groupModel, user, memberId));
         }
         message = "group not found";
         return ResponseEntity
@@ -287,11 +283,15 @@ public class GroupController {
     }
 
     @GetMapping("/checkadmin")
-    public boolean isAdmin(
+    public IsAdmin isAdmin(
             @RequestParam("userId") Long userId,
             @RequestParam("groupId") UUID groupId){
         GroupModel group = groupService.getGroupById(groupId);
-        return Objects.equals(group.getAdmin(), userId);
-    }
+        IsAdmin isAdmin = new IsAdmin();
 
+        if(Objects.equals(group.getAdmin(), userId)){
+            isAdmin.setAdmin(true);
+        }
+        return isAdmin;
+    }
 }

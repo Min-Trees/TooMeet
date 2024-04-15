@@ -1,5 +1,6 @@
 package com.group.groupsocial.command.repository;
 
+import com.group.groupsocial.command.entity.MemberId;
 import com.group.groupsocial.command.entity.MemberModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,4 +21,8 @@ public interface MemberRepository extends JpaRepository<MemberModel, Long> {
 
     List<MemberModel> findByUserId(Long userId);
     Page<MemberModel> findByUserId(Long userId, Pageable pageable);
+
+    default MemberId findById(MemberId memberId) {
+        return memberId.withUserIdOrDefault(null); // or specify your default value
+    }
 }

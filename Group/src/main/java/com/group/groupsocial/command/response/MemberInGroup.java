@@ -1,6 +1,7 @@
 package com.group.groupsocial.command.response;
 
 import com.group.groupsocial.command.entity.GroupModel;
+import com.group.groupsocial.command.entity.MemberId;
 import com.group.groupsocial.command.entity.MemberModel;
 import com.group.groupsocial.command.entity.User;
 import lombok.Getter;
@@ -28,7 +29,7 @@ public class MemberInGroup {
     @UpdateTimestamp
     private Date updatedAt;
 
-    public static MemberInGroup convert(GroupModel groupModel, User admin, MemberModel memberModel){
+    public static MemberInGroup convert(GroupModel groupModel, User admin, MemberId memberId){
         MemberInGroup groupResponse = new MemberInGroup();
         groupResponse.setGroupId(groupModel.getGroupId());
         groupResponse.setName(groupModel.getName());
@@ -38,7 +39,7 @@ public class MemberInGroup {
         groupResponse.setQuantityMember(groupModel.getQuantityMember());
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
-        groupResponse.member = memberModel.isMemberOfGroup(groupModel);
+        groupResponse.member = memberId.isMemberOfGroup(groupModel);
         return groupResponse;
     }
 }
