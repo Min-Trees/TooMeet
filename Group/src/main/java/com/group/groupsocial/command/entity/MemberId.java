@@ -29,4 +29,8 @@ public class MemberId implements Serializable {
             return defaultMemberId;
         }
     }
+
+    public void save() {
+
+    }
 }

@@ -1,6 +1,7 @@
 package com.group.groupsocial.command.controller;
 
 import com.group.groupsocial.command.entity.GroupModel;
+import com.group.groupsocial.command.entity.MemberId;
 import com.group.groupsocial.command.entity.MemberModel;
 import com.group.groupsocial.command.entity.User;
 import com.group.groupsocial.command.repository.GroupRepository;
@@ -84,11 +85,14 @@ public class MemberController {
             groupModel.setQuantityMember(1);
         }
         groupRepository.save(groupModel);
+        MemberId memberId = new MemberId();
+        memberId.setUserId(userId);
+        memberId.setGroup(groupModel);
+        memberRepository.save(memberModel);
         MemberResponse memberResponse = new MemberResponse();
         memberResponse.setGroup(GroupResponse.convert(groupModel,user));
         memberResponse.setUser(fetchDataFromExternalService(userId));
         memberResponse.setRole(memberModel.getRole().toString());
-
         return memberResponse;
     }
 

@@ -25,4 +25,7 @@ public interface MemberRepository extends JpaRepository<MemberModel, Long> {
     default MemberId findById(MemberId memberId) {
         return memberId.withUserIdOrDefault(null); // or specify your default value
     }
+
+    @Override
+    <S extends MemberModel> S save(S entity);
 }
