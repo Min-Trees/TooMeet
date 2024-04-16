@@ -96,8 +96,13 @@ public class GroupController {
         memberModel.setGroup(groupModel);
         groupModel.getMemberList().add(memberModel);
 
+
         GroupModel group = groupService.newGroup(groupModel);
         UUID groupId = group.getGroupId();
+        MemberId memberId = new MemberId();
+        memberId.setUserId(userId);
+        memberId.setGroup(groupModel);
+        memberRepository.save(memberModel);
 
         GroupResponse groups = new GroupResponse();
         groups.setGroupId(groupId); // Sử dụng groupId của nhóm mới
