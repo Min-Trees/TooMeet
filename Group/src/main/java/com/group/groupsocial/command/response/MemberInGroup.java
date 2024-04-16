@@ -39,7 +39,7 @@ public class MemberInGroup {
         groupResponse.setQuantityMember(groupModel.getQuantityMember());
         groupResponse.setCreatedAt(groupModel.getCreatedAt());
         groupResponse.setUpdatedAt(groupModel.getUpdatedAt());
-        groupResponse.member = memberId.isMemberOfGroup(groupModel);
+        groupResponse.setMember(memberId.isMemberOfGroup(groupModel));
         return groupResponse;
     }
 }
